@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "rollup -c rollup.config.js",
+    "build:dev": "rollup -c rollup.config.js && cp dist/led-panel-card.js ../custom_components/led_status_panel/www/led-panel-card.js",
     "dev": "rollup -c rollup.config.js --watch"
   },
   "dependencies": {

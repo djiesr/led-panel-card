@@ -1,0 +1,6 @@
+{
+  "name": "LED Panel Card",
+  "type": "plugin",
+  "homeassistant": "2024.1.0",
+  "filename": "led-panel-card.js"
+}
