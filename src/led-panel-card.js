@@ -16,6 +16,8 @@ class LedPanelCard extends LitElement {
     _error:        { state: true },
     _liveColors:   { state: true },
     _liveMode:     { state: true },    // true = live colors, false = config colors
+    _editMode:     { state: true },    // true = edit (select LEDs), false = view (show info)
+    _viewInfo:     { state: true },    // { friendly, entityId, stateVal } | null
     _selection:    { state: true },    // Set<"panel-row-col">
     _dialogOpen:   { state: true },
     _dialogCells:  { state: true },
@@ -28,6 +30,8 @@ class LedPanelCard extends LitElement {
     super();
     this._selection = new Set();
     this._liveMode = true;
+    this._editMode = false;
+    this._viewInfo = null;
   }
 
   static styles = css`
@@ -72,6 +76,48 @@ class LedPanelCard extends LitElement {
       color: #4caf50;
     }
     .live-btn:hover { background: var(--secondary-background-color, #2a2a2a); }
+
+    .mode-btn {
+      background: none;
+      border: 1px solid var(--divider-color, #444);
+      border-radius: 4px;
+      color: var(--secondary-text-color, #888);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .mode-btn.edit {
+      border-color: var(--primary-color, #03a9f4);
+      color: var(--primary-color, #03a9f4);
+    }
+    .mode-btn:hover { background: var(--secondary-background-color, #2a2a2a); }
+
+    .view-info-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      background: var(--secondary-background-color, #1e1e1e);
+      border: 1px solid var(--divider-color, #444);
+      border-radius: 6px;
+      min-height: 36px;
+    }
+    .view-info-bar .vi-friendly {
+      font-weight: 600;
+      color: var(--primary-text-color, #e0e0e0);
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .view-info-bar .vi-state {
+      font-size: 0.85rem;
+      color: var(--secondary-text-color, #aaa);
+    }
+    .view-info-bar .vi-empty {
+      font-size: 0.85rem;
+      color: var(--secondary-text-color, #666);
+      font-style: italic;
+    }
 
     .panels-row {
       display: flex;
@@ -263,6 +309,24 @@ class LedPanelCard extends LitElement {
   _onCellClick(e) {
     const { panel, row, col } = e.detail;
     const key = `${panel}-${row}-${col}`;
+
+    if (!this._editMode) {
+      // View mode: show entity info
+      const ledMap = buildLedMap(this._panelConfig?.assignments || []);
+      const assignment = ledMap.get(key);
+      if (assignment) {
+        const stateObj = this._hass?.states?.[assignment.entity_id];
+        this._viewInfo = {
+          friendly: stateObj?.attributes?.friendly_name || assignment.entity_id,
+          stateVal: stateObj?.state ?? "—",
+        };
+      } else {
+        this._viewInfo = null;
+      }
+      return;
+    }
+
+    // Edit mode: multi-selection
     const sel = new Set(this._selection);
     if (sel.has(key)) {
       sel.delete(key);
@@ -383,6 +447,11 @@ class LedPanelCard extends LitElement {
           <span class="card-title">${this._config?.title || t("card.title")}</span>
           <div class="header-actions">
             <button
+              class="mode-btn ${this._editMode ? "edit" : ""}"
+              title="${this._editMode ? t("card.mode.edit") : t("card.mode.view")}"
+              @click=${() => { this._editMode = !this._editMode; this._selection = new Set(); this._viewInfo = null; }}
+            >${this._editMode ? t("card.mode.edit") : t("card.mode.view")}</button>
+            <button
               class="live-btn ${this._liveMode ? "active" : ""}"
               title="${this._liveMode ? t("card.live.on") : t("card.live.off")}"
               @click=${() => { this._liveMode = !this._liveMode; }}
@@ -391,11 +460,23 @@ class LedPanelCard extends LitElement {
           </div>
         </div>
 
-        ${selCount > 0 ? html`
+        ${this._editMode && selCount > 0 ? html`
           <div class="selection-bar">
             <span class="count">${selCount} ${selCount > 1 ? t("sel.leds.plural") : t("sel.leds")}</span>
             <button class="btn-clear" @click=${this._clearSelection}>${t("sel.clear")}</button>
             <button class="btn-configure" @click=${this._openDialogFromSelection}>${t("sel.configure")}</button>
+          </div>
+        ` : ""}
+
+        ${!this._editMode ? html`
+          <div class="view-info-bar">
+            ${this._viewInfo
+              ? html`
+                  <span class="vi-friendly">${this._viewInfo.friendly}</span>
+                  <span class="vi-state">${this._viewInfo.stateVal}</span>
+                `
+              : html`<span class="vi-empty">${t("card.view.hint")}</span>`
+            }
           </div>
         ` : ""}
 
@@ -448,7 +529,7 @@ class LedPanelCard extends LitElement {
           </div>
         `)}
       </div>
-      ${this._selection?.size === 0
+      ${this._editMode && this._selection?.size === 0
         ? html`<div class="hint">${t("card.hint")}</div>`
         : ""}
     `;
