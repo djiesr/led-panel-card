@@ -1,6 +1,6 @@
 {
   "name": "led-panel-card",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "Lovelace card for LED Status Panel (WS2812 8x8)",
   "license": "MIT",
   "type": "module",
