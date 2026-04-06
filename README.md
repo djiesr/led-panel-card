@@ -13,6 +13,8 @@ Carte Lovelace pour panneaux LED WS2812 8×8 pilotés par Home Assistant.
 3. Installer
 4. Ajouter la ressource : `/hacsfiles/led-panel-card/led-panel-card.js`
 
+> **Développeurs :** le fichier servi par HACS est `led-panel-card.js` **à la racine du dépôt** (généré par `npm run build`). Il doit être **commité** pour que l’installation HACS ne renvoie pas une erreur 404.
+
 ## Licence
 
 MIT

@@ -6,7 +6,8 @@ const dev = process.env.ROLLUP_WATCH === "true";
 export default {
   input: "src/led-panel-card.js",
   output: {
-    file: "dist/led-panel-card.js",
+    // Racine du dépôt : nom attendu par HACS (hacs.json → filename)
+    file: "led-panel-card.js",
     format: "es",
     sourcemap: dev,
   },
